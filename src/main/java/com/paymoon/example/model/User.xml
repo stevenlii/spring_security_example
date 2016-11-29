@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.paymoon.example.model.UserMapper">  
+<select id="getUser" parameterType="com.paymoon.example.model.User" resultType="com.paymoon.example.model.User">  
+    SELECT id,username,password,status,descn FROM user WHERE id=#{id}
+</select>  
+<insert id="addUser" parameterType="com.paymoon.example.model.User" flushCache="true">  
+   INSERT INTO user (id,username,password,status,descn) VALUES (
+   #{id},#{username},#{password},#{status},#{descn}
+   )  
+</insert>  
+  
+</mapper>

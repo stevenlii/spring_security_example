@@ -1,0 +1,65 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+  xmlns:beans="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://www.springframework.org/schema/security
+           http://www.springframework.org/schema/security/spring-security.xsd">
+     
+     
+<http auto-config="true" >
+<access-denied-handler error-page="/accessDenied.jsp"/>
+<intercept-url pattern="/login.jsp" access="IS_AUTHENTICATED_ANONYMOUSLY" />
+<intercept-url pattern="/admin.jsp" access="ROLE_ADMIN" />
+<intercept-url pattern="/**" access="ROLE_USER" />
+<form-login login-page="/login.jsp" authentication-failure-url="/login.jsp?error=true" default-target-url="/index.jsp" />
+  
+  <!-- TODO 在SS3.0.x中，自定义的filter的配置要放在s:http里 -->
+  <custom-filter ref="filterSecurityInterceptor" before="FILTER_SECURITY_INTERCEPTOR"/>
+</http> 
+         
+<authentication-manager alias="authenticationManager">
+    <authentication-provider>
+<!--     <password-encoder hash="md5">
+        <salt-source user-property="username"/>
+    </password-encoder> -->
+        <jdbc-user-service data-source-ref="dataSource" 
+            users-by-username-query="select username,password,status as enabled
+                                         from user
+                                        where username=?"
+            authorities-by-username-query="select u.username,r.name as authority
+                                             from user u
+                                             join user_role ur
+                                               on u.id=ur.user_id
+                                             join role r
+                                               on r.id=ur.role_id
+                                            where u.username=?"/>
+    </authentication-provider>
+</authentication-manager>
+ 
+<beans:bean id="filterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+
+       <beans:property name="authenticationManager"  ref="authenticationManager" />   
+       <beans:property name="accessDecisionManager" ref="accessDecisionManager" /> 
+       <beans:property name="securityMetadataSource" ref="databaseDefinitionSource" />
+        
+</beans:bean> 
+    
+  	<beans:bean id="accessDecisionManager"
+		class="org.springframework.security.access.vote.AffirmativeBased">
+		<beans:property name="allowIfAllAbstainDecisions" value="false" />
+        <beans:property name="decisionVoters">  
+            <beans:list>  
+                     <beans:ref bean="ftsp_security_urlVoter" />
+            </beans:list>  
+        </beans:property> 
+	</beans:bean> 
+	
+	 	<beans:bean id="ftsp_security_urlVoter" class="com.paymoon.example.security.UrlVoter"/>
+	 	<!--资源源数据定义，将所有的资源和权限对应关系建立起来，即定义某一资源可以被哪些角色访问 --> 
+	 	<!--这里可对传过来的url进行转换为role，并把role设到 Collection<ConfigAttribute> 里面，供ftsp_security_urlVoter 进行和用户的角色比对，以确定是否有权限--> 
+        <beans:bean id="databaseDefinitionSource" class="com.paymoon.example.security.FtspSecurityMetadataSource">
+
+</beans:bean> 
+   
+</beans:beans>
